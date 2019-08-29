@@ -11,7 +11,7 @@
     <name>geonames-reactive-api</name>
     <description>A simple geonames-reactive-api.</description>
     <!-- FIXME change it to the project's website -->
-    <url>http://www.example.com</url>
+    <url>https://wordlift.io</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -104,4 +104,13 @@
             </plugin>
         </plugins>
     </reporting>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub WordLift Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/wordlift/geonames-reactive-api</url>
+        </repository>
+    </distributionManagement>
+
 </project>
