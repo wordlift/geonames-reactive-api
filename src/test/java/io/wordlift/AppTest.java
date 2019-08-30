@@ -1,8 +1,6 @@
 package io.wordlift;
 
-import io.wordlift.geonames.FindById;
-import io.wordlift.geonames.FindNearBy;
-import io.wordlift.geonames.GeonamesApi;
+import io.wordlift.geonames.*;
 import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -10,7 +8,11 @@ import junit.framework.TestSuite;
 import lombok.val;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
+import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 /**
@@ -52,41 +54,36 @@ public class AppTest
 
         val IS_NUMBER = Pattern.compile("^\\d+$");
 
+        val sequence = new AtomicLong();
+
         StepVerifier.create(client.execute(
                 FindNearBy.builder()
-                        .latitude(41.905739)
-                        .longitude(12.481812)
-                        .featureClass("A")
+                        .latitude(21.096889)
+                        .longitude(-86.766289)
+                        .featureClass("P")
                         .build())
                 .flatMapMany(Flux::fromArray)
                 .flatMap(f -> client.execute(
-                        FindById.builder()
+                        Hierarchy.builder()
                                 .id(f.getGeonameId())
                                 .build()))
-                .flatMap(f -> Flux.just(f.getCountryId(), f.getAdminId1(), f.getAdminId2(), f.getAdminId3(), f.getAdminId4(), f.getAdminId5())
-                        .filter(s -> IS_NUMBER.matcher(s).matches())
-                        .map(Long::parseLong)
+                .flatMap(fs -> Flux.fromArray(fs)
+                        .filter(f -> "A".equals(f.getFcl()) || "P".equals(f.getFcl()))
+                        .map(FeatureBase::getGeonameId)
+                        .zipWith(Flux.range(0, fs.length))
                         .parallel(4)
-                        .flatMap(id -> client.execute(FindById.builder()
-                                .id(id)
-                                .build()))
-                        .sequential()
-                        .sort((f1, f2) -> {
-
-                            if (f1.getFcode().equals(f2.getFcode()))
-                                return 0;
-
-                            if (!f2.getFcode().startsWith("ADM"))
-                                return -1;
-
-                            return f2.getFcode().compareTo(f1.getFcode());
-                        })))
-                .assertNext(f -> Assert.assertEquals(11396114, (long) f.getGeonameId()))
-                .assertNext(f -> Assert.assertEquals(11396080, (long) f.getGeonameId()))
-                .assertNext(f -> Assert.assertEquals(3169071, (long) f.getGeonameId()))
-                .assertNext(f -> Assert.assertEquals(3169069, (long) f.getGeonameId()))
-                .assertNext(f -> Assert.assertEquals(3174976, (long) f.getGeonameId()))
-                .assertNext(f -> Assert.assertEquals(3175395, (long) f.getGeonameId()))
+                        .flatMap(t -> client.execute(FindById.builder()
+                                .id(t.getT1())
+                                .build())
+                                .map(f -> Tuples.of(f, t.getT2())))
+                        .sequential())
+                .sort(Comparator.<Tuple2<FindById.Feature, Integer>>comparingInt(Tuple2::getT2).reversed())
+                .map(Tuple2::getT1))
+                .assertNext(f -> Assert.assertEquals(7649125, (long) f.getGeonameId()))
+                .assertNext(f -> Assert.assertEquals(3531673, (long) f.getGeonameId()))
+                .assertNext(f -> Assert.assertEquals(8581707, (long) f.getGeonameId()))
+                .assertNext(f -> Assert.assertEquals(3520887, (long) f.getGeonameId()))
+                .assertNext(f -> Assert.assertEquals(3996063, (long) f.getGeonameId()))
                 .verifyComplete();
 
         assertTrue(true);

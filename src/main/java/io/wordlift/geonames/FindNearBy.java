@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @RequiredArgsConstructor
 @Builder
-public class FindNearBy implements Op<FindNearBy.Feature[]> {
+public class FindNearBy implements Op<FeatureBase[]> {
 
     private final static String PATH = "/findNearbyJSON";
 
@@ -63,11 +63,11 @@ public class FindNearBy implements Op<FindNearBy.Feature[]> {
         return qs.toString();
     }
 
-    public Feature[] execute(byte[] bytes) {
+    public FeatureBase[] execute(byte[] bytes) {
 
         return JsonIterator.deserialize(bytes)
                 .get("geonames")
-                .as(Feature[].class);
+                .as(FeatureBase[].class);
     }
 
     enum Style {
@@ -75,13 +75,6 @@ public class FindNearBy implements Op<FindNearBy.Feature[]> {
         MEDIUM,
         LONG,
         FULL;
-    }
-
-    @Getter
-    public static class Feature {
-
-        private Long geonameId;
-
     }
 
 }
