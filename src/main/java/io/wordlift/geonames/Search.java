@@ -13,7 +13,7 @@ import lombok.val;
 @Builder
 public class Search implements Op<FeatureBase[]> {
 
-    private final static String PATH = "/SearchJSON";
+    private final static String PATH = "/searchJSON";
 
     private String nameEquals;
 
